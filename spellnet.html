@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpellNet — P2P Arcane Messenger</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --void: #07080d;
+  --deep: #0d0f1a;
+  --panel: #111420;
+  --surface: #161928;
+  --border: rgba(120,140,200,0.12);
+  --border-bright: rgba(120,140,200,0.3);
+  --text: #c8d0e8;
+  --text-dim: #6a7490;
+  --text-bright: #e8edf8;
+  --fire: #ff4d1c;
+  --fire-glow: #ff7a3d;
+  --heal: #22d98a;
+  --heal-glow: #5fffa8;
+  --shield: #4db8ff;
+  --shield-glow: #88d4ff;
+  --lightning: #ffe066;
+  --lightning-glow: #fff5aa;
+  --curse: #c44dff;
+  --curse-glow: #e088ff;
+  --accent: #7c6aff;
+  --accent-glow: #a99fff;
+  --gold: #d4a843;
+  --gold-glow: #f5ca6a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: 'Crimson Pro', serif;
+  font-size: 15px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Starfield background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(60,40,120,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(20,60,100,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(80,20,60,0.1) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── HEADER ─── */
+header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: rgba(13,15,26,0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.logo {
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(212,168,67,0.5);
+  letter-spacing: 3px;
+  flex-shrink: 0;
+}
+
+.logo span {
+  color: var(--accent-glow);
+}
+
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.room-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--heal);
+  box-shadow: 0 0 8px var(--heal);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.5; transform:scale(0.8); }
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.demo-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 3px 8px;
+  border: 1px solid var(--accent);
+  color: var(--accent-glow);
+  border-radius: 2px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.demo-badge:hover, .demo-badge.active {
+  background: rgba(124,106,255,0.15);
+  box-shadow: 0 0 12px rgba(124,106,255,0.3);
+}
+
+.dag-toggle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-bright);
+  color: var(--text-dim);
+  border-radius: 2px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dag-toggle:hover { color: var(--text); border-color: var(--text); }
+
+/* ─── MAIN LAYOUT ─── */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── LEFT SIDEBAR ─── */
+.sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  background: rgba(13,15,26,0.8);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-title {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+
+.players-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+}
+
+.player-card {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-left: 2px solid transparent;
+  position: relative;
+}
+.player-card:hover { background: rgba(255,255,255,0.03); }
+.player-card.selected { border-left-color: var(--accent); background: rgba(124,106,255,0.06); }
+.player-card.self { border-left-color: var(--gold); }
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.player-name-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-name {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-class {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.stat-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
+.hp-fill { background: linear-gradient(90deg, var(--fire), var(--heal)); }
+.en-fill { background: linear-gradient(90deg, var(--accent), var(--shield)); }
+
+.stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  width: 24px;
+  text-align: right;
+}
+
+.status-effects {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.status-pill {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 1px; right: 1px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--deep);
+}
+.online-dot.on { background: var(--heal); box-shadow: 0 0 4px var(--heal); }
+.online-dot.off { background: var(--text-dim); }
+
+/* ─── FEED (center) ─── */
+.feed-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scroll-behavior: smooth;
+}
+
+.feed::-webkit-scrollbar { width: 4px; }
+.feed::-webkit-scrollbar-track { background: transparent; }
+.feed::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+.event-entry {
+  display: flex;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  animation: slideIn 0.3s cubic-bezier(0.2,0,0,1);
+  position: relative;
+  align-items: flex-start;
+}
+@keyframes slideIn {
+  from { opacity:0; transform: translateX(-10px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+
+.event-entry:hover { background: rgba(255,255,255,0.02); }
+
+.event-entry.demo-event { opacity: 0.65; }
+
+.event-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.event-body { flex: 1; min-width: 0; }
+
+.event-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.event-author {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.event-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+.demo-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 0 3px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+
+.event-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Spell event styling */
+.spell-entry {
+  background: rgba(20,22,35,0.6);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 2px 0;
+}
+
+.spell-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.spell-icon {
+  font-size: 18px;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+.spell-title {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.spell-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.spell-effect {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* Type-specific spell colors */
+.spell-fireball .spell-title { color: var(--fire-glow); }
+.spell-fireball { border-color: rgba(255,77,28,0.3); background: rgba(255,77,28,0.06); }
+.spell-fireball .spell-effect { background: rgba(255,77,28,0.15); color: var(--fire-glow); }
+
+.spell-heal .spell-title { color: var(--heal-glow); }
+.spell-heal { border-color: rgba(34,217,138,0.3); background: rgba(34,217,138,0.06); }
+.spell-heal .spell-effect { background: rgba(34,217,138,0.15); color: var(--heal-glow); }
+
+.spell-shield .spell-title { color: var(--shield-glow); }
+.spell-shield { border-color: rgba(77,184,255,0.3); background: rgba(77,184,255,0.06); }
+.spell-shield .spell-effect { background: rgba(77,184,255,0.15); color: var(--shield-glow); }
+
+.spell-lightning .spell-title { color: var(--lightning-glow); }
+.spell-lightning { border-color: rgba(255,224,102,0.3); background: rgba(255,224,102,0.06); }
+.spell-lightning .spell-effect { background: rgba(255,224,102,0.15); color: var(--lightning-glow); }
+
+.spell-curse .spell-title { color: var(--curse-glow); }
+.spell-curse { border-color: rgba(196,77,255,0.3); background: rgba(196,77,255,0.06); }
+.spell-curse .spell-effect { background: rgba(196,77,255,0.15); color: var(--curse-glow); }
+
+/* DAG merge indicator */
+.dag-merge-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.dag-merge-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+}
+
+/* Achievements */
+.achievement-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(212,168,67,0.1);
+  border: 1px solid rgba(212,168,67,0.3);
+  border-radius: 6px;
+  margin: 4px 0;
+  animation: achieveIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes achieveIn {
+  from { opacity:0; transform: scale(0.9); }
+  to   { opacity:1; transform: scale(1); }
+}
+
+.achieve-icon { font-size: 20px; }
+.achieve-text { }
+.achieve-title { font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold); }
+.achieve-desc { font-size: 12px; color: var(--text-dim); font-style: italic; }
+
+/* ─── INPUT PANEL ─── */
+.input-panel {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: rgba(11,13,22,0.95);
+  padding: 12px 16px;
+}
+
+.spell-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.spell-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.spell-btn:hover { transform: translateY(-1px); }
+.spell-btn:active { transform: translateY(0); }
+
+.spell-btn-fireball { color: var(--fire-glow); border-color: rgba(255,77,28,0.4); }
+.spell-btn-fireball:hover { background: rgba(255,77,28,0.12); box-shadow: 0 0 16px rgba(255,77,28,0.3); }
+
+.spell-btn-heal { color: var(--heal-glow); border-color: rgba(34,217,138,0.4); }
+.spell-btn-heal:hover { background: rgba(34,217,138,0.12); box-shadow: 0 0 16px rgba(34,217,138,0.3); }
+
+.spell-btn-shield { color: var(--shield-glow); border-color: rgba(77,184,255,0.4); }
+.spell-btn-shield:hover { background: rgba(77,184,255,0.12); box-shadow: 0 0 16px rgba(77,184,255,0.3); }
+
+.spell-btn-lightning { color: var(--lightning-glow); border-color: rgba(255,224,102,0.4); }
+.spell-btn-lightning:hover { background: rgba(255,224,102,0.12); box-shadow: 0 0 16px rgba(255,224,102,0.3); }
+
+.spell-btn-curse { color: var(--curse-glow); border-color: rgba(196,77,255,0.4); }
+.spell-btn-curse:hover { background: rgba(196,77,255,0.12); box-shadow: 0 0 16px rgba(196,77,255,0.3); }
+
+.spell-btn .cost {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  opacity: 0.6;
+}
+
+.target-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.target-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Crimson Pro', serif;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  flex: 1;
+  outline: none;
+}
+
+.chat-row {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-bright);
+  font-family: 'Crimson Pro', serif;
+  font-size: 14px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.chat-input:focus { border-color: var(--border-bright); }
+.chat-input::placeholder { color: var(--text-dim); font-style: italic; }
+
+.send-btn {
+  background: rgba(124,106,255,0.15);
+  border: 1px solid rgba(124,106,255,0.4);
+  color: var(--accent-glow);
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.send-btn:hover { background: rgba(124,106,255,0.25); box-shadow: 0 0 16px rgba(124,106,255,0.3); }
+
+/* ─── DAG PANEL ─── */
+.dag-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: rgba(10,11,18,0.9);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.25s ease;
+}
+
+.dag-panel.hidden { width: 0; }
+
+.dag-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dag-title {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.dag-canvas-wrap {
+  flex: 1;
+  overflow: hidden;
+  padding: 12px;
+}
+
+#dagCanvas {
+  width: 100%;
+  height: 100%;
+}
+
+.dag-legend {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: var(--text-dim);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* ─── SPELL ANIMATION OVERLAY ─── */
+#spellOverlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  overflow: hidden;
+}
+
+.spell-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particleFly 0.8s cubic-bezier(0.2,0,0.8,1) forwards;
+}
+
+@keyframes particleFly {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0) translateY(-40px); }
+}
+
+.spell-flash {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: flashBurst 0.5s ease-out forwards;
+}
+
+@keyframes flashBurst {
+  0%   { opacity: 0.9; transform: scale(0.2); }
+  60%  { opacity: 0.5; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(2); }
+}
+
+/* ─── SCROLLBAR for players ─── */
+.players-list::-webkit-scrollbar { width: 3px; }
+.players-list::-webkit-scrollbar-track { background: transparent; }
+.players-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ─── DAG node styles ─── */
+.tooltip {
+  position: fixed;
+  background: rgba(13,15,26,0.95);
+  border: 1px solid var(--border-bright);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+  line-height: 1.6;
+}
+
+/* ─── Health change float ─── */
+.dmg-float {
+  position: fixed;
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 1000;
+  animation: dmgFloat 1.2s ease-out forwards;
+}
+
+@keyframes dmgFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  20%  { transform: translateY(-10px) scale(1.3); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">SPELL<span>NET</span></div>
+  <div class="room-info">
+    <div class="room-dot"></div>
+    <span>ROOM · arcane-delta-7</span>
+  </div>
+  <div class="room-info" style="margin-left:12px;">
+    <span style="font-size:9px;color:var(--text-dim);">DAG HEAD:</span>
+    <span id="dagHead" style="color:var(--accent-glow);">a3f9…</span>
+  </div>
+  <div class="header-right">
+    <div class="demo-badge" id="demoToggle">◈ DEMO</div>
+    <div class="dag-toggle" id="dagToggleBtn">⬡ DAG</div>
+  </div>
+</header>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-title">Combatants</div>
+    <div class="players-list" id="playersList"></div>
+  </div>
+
+  <!-- Feed area -->
+  <div class="feed-area">
+    <div class="feed" id="feed"></div>
+
+    <!-- Input Panel -->
+    <div class="input-panel">
+      <div class="spell-buttons" id="spellButtons"></div>
+      <div class="target-row">
+        <span>⟶ TARGET:</span>
+        <select class="target-select" id="targetSelect"></select>
+      </div>
+      <div class="chat-row">
+        <input class="chat-input" id="chatInput" type="text" placeholder="Whisper to the ether… or type a message">
+        <button class="send-btn" id="sendBtn">SEND</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAG Panel -->
+  <div class="dag-panel" id="dagPanel">
+    <div class="dag-header">
+      <span class="dag-title">Event DAG</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);" id="dagNodeCount">0 nodes</span>
+    </div>
+    <div class="dag-canvas-wrap">
+      <canvas id="dagCanvas"></canvas>
+    </div>
+    <div class="dag-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--fire)"></div>spell</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--text-dim)"></div>chat</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>merge</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>genesis</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Spell overlay -->
+<div id="spellOverlay"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ─── CRYPTO / IDENTITY (Simplified for demo, real would use Web Crypto API) ───
+
+function randomHex(n) {
+  return Array.from(crypto.getRandomValues(new Uint8Array(n)))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function hashEvent(ev) {
+  const str = JSON.stringify({prev:ev.prev,author:ev.author,ts:ev.ts,type:ev.type,payload:ev.payload});
+  let h = 0;
+  for (let i=0;i<str.length;i++) h = (Math.imul(31,h)+str.charCodeAt(i))|0;
+  return Math.abs(h).toString(16).padStart(8,'0') + randomHex(2);
+}
+
+// ─── GAME STATE ───
+
+const SPELL_DEFS = {
+  fireball:  { icon:'🔥', label:'Fireball',  cost:15, color:'var(--fire)',      effect:'damage',  value:25, desc:'A searing bolt of flame' },
+  heal:      { icon:'✦',  label:'Heal',      cost:20, color:'var(--heal)',      effect:'heal',    value:30, desc:'Mend wounds with arcane light' },
+  shield:    { icon:'🛡', label:'Shield',    cost:10, color:'var(--shield)',    effect:'shield',  value:3,  desc:'An aegis of force for 3 turns' },
+  lightning: { icon:'⚡', label:'Lightning', cost:20, color:'var(--lightning)', effect:'stun',    value:20, desc:'Electrify and stun target' },
+  curse:     { icon:'☽',  label:'Curse',     cost:12, color:'var(--curse)',     effect:'curse',   value:15, desc:'Drain 15 HP over 3 turns' },
+};
+
+const AVATARS = ['🧙','🧝','🧛','🧜','🧚','🧟','🧞'];
+const CLASSES = ['Archmage','Shadow Walker','Blood Witch','Tide Caller','Dream Weaver','Necromancer','Sand Sage'];
+const COLORS  = ['#a87cff','#ff7a5c','#5cffa8','#5cccff','#ffcc5c','#ff5cb3','#7cffc8'];
+const NAMES   = ['Lyra','Zephon','Mordecai','Serith','Vael','Nyxara','Orin'];
+
+let selfId = 'player_' + randomHex(3);
+let selectedTarget = null;
+let demoActive = false;
+let demoInterval = null;
+let dagVisible = true;
+let achievements = new Set();
+
+// DAG
+const dagNodes = new Map(); // id -> event node
+const dagHeads = new Set();
+
+// Players
+const players = new Map();
+
+function initPlayers() {
+  // Self
+  players.set(selfId, {
+    id: selfId,
+    name: NAMES[0],
+    avatar: AVATARS[0],
+    class: CLASSES[0],
+    color: COLORS[0],
+    hp: 100, maxHp: 100,
+    energy: 80, maxEnergy: 100,
+    effects: [],
+    online: true,
+    self: true,
+  });
+  // Peers
+  for (let i=1;i<5;i++) {
+    const pid = 'player_' + randomHex(3);
+    players.set(pid, {
+      id: pid,
+      name: NAMES[i],
+      avatar: AVATARS[i],
+      class: CLASSES[i],
+      color: COLORS[i],
+      hp: Math.floor(60+Math.random()*40),
+      maxHp: 100,
+      energy: Math.floor(40+Math.random()*60),
+      maxEnergy: 100,
+      effects: [],
+      online: true,
+      self: false,
+    });
+  }
+  selectedTarget = [...players.values()].find(p=>!p.self)?.id;
+}
+
+// ─── DAG OPERATIONS ───
+
+function createEvent(type, payload, isDemo=false) {
+  const ev = {
+    id: randomHex(5),
+    prev: [...dagHeads],
+    author: isDemo ? [...players.keys()][Math.floor(Math.random()*players.size)] : selfId,
+    ts: Date.now(),
+    type,
+    payload,
+    demo: isDemo,
+  };
+  ev.sig = randomHex(8); // simplified sig
+  addEventToDAG(ev);
+  return ev;
+}
+
+function addEventToDAG(ev) {
+  dagNodes.set(ev.id, { ...ev, x:0, y:0 });
+  ev.prev.forEach(p => dagHeads.delete(p));
+  dagHeads.add(ev.id);
+  document.getElementById('dagHead').textContent = ev.id.substring(0,4) + '…';
+  document.getElementById('dagNodeCount').textContent = dagNodes.size + ' nodes';
+  layoutDAG();
+  drawDAG();
+}
+
+// ─── REDUCER ───
+
+function applyEvent(ev) {
+  if (ev.type === 'spell') {
+    const {spell, target} = ev.payload;
+    const def = SPELL_DEFS[spell];
+    const actor = players.get(ev.author);
+    const tgt   = players.get(target);
+    if (!actor || !tgt || !def) return;
+
+    if (def.effect === 'damage') {
+      const dmg = tgt.effects.includes('shielded') ? 0 : def.value;
+      tgt.hp = Math.max(0, tgt.hp - dmg);
+      if (tgt.effects.includes('shielded')) {
+        tgt.effects = tgt.effects.filter(e=>e!=='shielded');
+      }
+      floatDamage(tgt, '-' + dmg, def.color);
+    } else if (def.effect === 'heal') {
+      tgt.hp = Math.min(tgt.maxHp, tgt.hp + def.value);
+      floatDamage(tgt, '+' + def.value, 'var(--heal-glow)');
+    } else if (def.effect === 'shield') {
+      if (!tgt.effects.includes('shielded')) tgt.effects.push('shielded');
+    } else if (def.effect === 'stun') {
+      if (!tgt.effects.includes('stunned')) tgt.effects.push('stunned');
+      const dmg = def.value;
+      tgt.hp = Math.max(0, tgt.hp - dmg);
+      floatDamage(tgt, '-' + dmg, 'var(--lightning-glow)');
+    } else if (def.effect === 'curse') {
+      if (!tgt.effects.includes('cursed')) tgt.effects.push('cursed');
+    }
+    // Energy cost
+    actor.energy = Math.max(0, actor.energy - def.cost);
+  }
+}
+
+// ─── UI RENDERING ───
+
+function renderPlayers() {
+  const list = document.getElementById('playersList');
+  list.innerHTML = '';
+  const targetSel = document.getElementById('targetSelect');
+  const curTarget = targetSel.value;
+  targetSel.innerHTML = '';
+
+  players.forEach(p => {
+    // Player card
+    const card = document.createElement('div');
+    card.className = 'player-card' + (p.self?' self':'') + (p.id===selectedTarget?' selected':'');
+    card.dataset.id = p.id;
+    card.innerHTML = `
+      <div class="player-header">
+        <div class="avatar" style="background:${p.color}22;border:1px solid ${p.color}44;">
+          ${p.avatar}
+          <div class="online-dot ${p.online?'on':'off'}"></div>
+        </div>
+        <div class="player-name-row">
+          <div class="player-name" style="color:${p.color}">${p.name}${p.self?' <span style="color:var(--gold);font-size:9px;">(you)</span>':''}</div>
+          <div class="player-class">${p.class}</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">HP</div>
+        <div class="stat-bar"><div class="stat-fill hp-fill" style="width:${p.hp/p.maxHp*100}%"></div></div>
+        <div class="stat-val">${p.hp}</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">EN</div>
+        <div class="stat-bar"><div class="stat-fill en-fill" style="width:${p.energy/p.maxEnergy*100}%"></div></div>
+        <div class="stat-val">${p.energy}</div>
+      </div>
+      ${p.effects.length?`<div class="status-effects">${p.effects.map(e=>statusPill(e)).join('')}</div>`:''}
+    `;
+    if (!p.self) {
+      card.addEventListener('click', () => {
+        selectedTarget = p.id;
+        document.getElementById('targetSelect').value = p.id;
+        renderPlayers();
+      });
+    }
+    list.appendChild(card);
+
+    // Target dropdown
+    if (!p.self) {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      targetSel.appendChild(opt);
+    }
+  });
+
+  if (curTarget) targetSel.value = curTarget;
+}
+
+function statusPill(effect) {
+  const map = {
+    shielded: { color:'#4db8ff', bg:'rgba(77,184,255,0.15)', label:'SHIELDED' },
+    stunned:  { color:'#ffe066', bg:'rgba(255,224,102,0.15)', label:'STUNNED' },
+    cursed:   { color:'#c44dff', bg:'rgba(196,77,255,0.15)', label:'CURSED' },
+  };
+  const s = map[effect] || { color:'#aaa', bg:'rgba(170,170,170,0.1)', label: effect.toUpperCase() };
+  return `<span class="status-pill" style="color:${s.color};background:${s.bg};border:1px solid ${s.color}44">${s.label}</span>`;
+}
+
+function renderSpellButtons() {
+  const wrap = document.getElementById('spellButtons');
+  wrap.innerHTML = '';
+  Object.entries(SPELL_DEFS).forEach(([key, def]) => {
+    const btn = document.createElement('button');
+    btn.className = `spell-btn spell-btn-${key}`;
+    btn.title = `${def.desc} · ${def.cost} energy`;
+    btn.innerHTML = `${def.icon} ${def.label.toUpperCase()} <span class="cost">⚡${def.cost}</span>`;
+    btn.addEventListener('click', () => castSpell(key));
+    wrap.appendChild(btn);
+  });
+}
+
+// ─── FEED ───
+
+let spellCastCount = {};
+let healCount = 0;
+
+function castSpell(spell) {
+  const targetId = document.getElementById('targetSelect').value;
+  const self = players.get(selfId);
+  const def = SPELL_DEFS[spell];
+  if (!targetId) return;
+  if (self.energy < def.cost) {
+    addSystemMessage('⚠ Not enough energy!');
+    return;
+  }
+
+  const ev = createEvent('spell', { spell, target: targetId });
+  applyEvent(ev);
+  addSpellToFeed(ev, false);
+  renderPlayers();
+  triggerSpellEffect(spell, ev);
+
+  // Achievements
+  spellCastCount[spell] = (spellCastCount[spell]||0) + 1;
+  if (spell==='fireball' && spellCastCount['fireball']===1) grantAchievement('🔥 First Blood', 'Cast your first Fireball');
+  if (spell==='heal') { healCount++; if(healCount===3) grantAchievement('✦ Battlefield Medic', 'Healed 3 times consecutively'); }
+  else healCount=0;
+  if (Object.values(spellCastCount).reduce((a,b)=>a+b,0)>=5) {
+    if (!achievements.has('spellmaster')) { grantAchievement('⚡ Spell Weaver', 'Cast 5 total spells'); }
+  }
+}
+
+function addSpellToFeed(ev, isDemo) {
+  const actor = players.get(ev.author);
+  const tgt   = players.get(ev.payload.target);
+  const def   = SPELL_DEFS[ev.payload.spell];
+  if (!actor||!tgt||!def) return;
+
+  const feed = document.getElementById('feed');
+  const wrap = document.createElement('div');
+  wrap.className = 'event-entry' + (isDemo?' demo-event':'');
+  wrap.innerHTML = `
+    <div class="event-avatar" style="background:${actor.color}22;border:1px solid ${actor.color}33">${actor.avatar}</div>
+    <div class="event-body">
+      <div class="event-meta">
+        <span class="event-author" style="color:${actor.color}">${actor.name}</span>
+        <span class="event-time">${formatTime(ev.ts)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);">#${ev.id}</span>
+        ${isDemo?'<span class="demo-tag">DEMO</span>':''}
+      </div>
+      <div class="spell-entry spell-${ev.payload.spell}">
+        <div class="spell-header">
+          <span class="spell-icon">${def.icon}</span>
+          <div>
+            <div class="spell-title">${def.label} → ${tgt.name}</div>
+            <div class="spell-desc">${def.desc}</div>
+          </div>
+        </div>
+        <span class="spell-effect">${getEffectLabel(def, tgt)}</span>
+      </div>
+    </div>
+  `;
+  feed.appendChild(wrap);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function getEffectLabel(def, tgt) {
+  if (def.effect==='damage') return tgt.effects.includes('shielded') ? '🛡 BLOCKED by shield' : `−${def.value} HP`;
+  if (def.effect==='heal') return `+${def.value} HP restored`;
+  if (def.effect==='shield') return `+SHIELDED for 3 turns`;
+  if (def.effect==='stun') return `⚡ STUNNED + −${def.value} HP`;
+  if (def.effect==='curse') return `☽ CURSED: −${def.value} HP/turn`;
+  return '';
+}
+
+function addChatToFeed(text, authorId, isDemo=false) {
+  const actor = players.get(authorId);
+  if (!actor) return;
+  const feed = document.getElementById('feed');
+  const wrap = document.createElement('div');
+  wrap.className = 'event-entry' + (isDemo?' demo-event':'');
+  wrap.innerHTML = `
+    <div class="event-avatar" style="background:${actor.color}22;border:1px solid ${actor.color}33">${actor.avatar}</div>
+    <div class="event-body">
+      <div class="event-meta">
+        <span class="event-author" style="color:${actor.color}">${actor.name}</span>
+        <span class="event-time">${formatTime(Date.now())}</span>
+        ${isDemo?'<span class="demo-tag">DEMO</span>':''}
+      </div>
+      <div class="event-text">${escapeHtml(text)}</div>
+    </div>
+  `;
+  feed.appendChild(wrap);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function addSystemMessage(msg) {
+  const feed = document.getElementById('feed');
+  const d = document.createElement('div');
+  d.className = 'dag-merge-event';
+  d.innerHTML = `<div class="dag-merge-line"></div><span>${msg}</span><div class="dag-merge-line"></div>`;
+  feed.appendChild(d);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function grantAchievement(title, desc) {
+  achievements.add(title);
+  const feed = document.getElementById('feed');
+  const d = document.createElement('div');
+  d.innerHTML = `
+    <div class="achievement-toast">
+      <span class="achieve-icon">🏆</span>
+      <div class="achieve-text">
+        <div class="achieve-title">${title}</div>
+        <div class="achieve-desc">${desc}</div>
+      </div>
+    </div>`;
+  feed.appendChild(d.firstElementChild);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// ─── SPELL VFX ───
+
+function triggerSpellEffect(spell, ev) {
+  const def = SPELL_DEFS[spell];
+  const overlay = document.getElementById('spellOverlay');
+  const count = spell==='lightning'?20:spell==='fireball'?15:10;
+  const cx = window.innerWidth*0.5, cy = window.innerHeight*0.5;
+
+  // Flash
+  const flash = document.createElement('div');
+  flash.className = 'spell-flash';
+  const sz = 120;
+  flash.style.cssText = `
+    width:${sz}px;height:${sz}px;
+    left:${cx-sz/2}px;top:${cy-sz/2}px;
+    background:${def.color};
+    box-shadow:0 0 60px ${def.color};
+  `;
+  overlay.appendChild(flash);
+  setTimeout(()=>flash.remove(), 600);
+
+  // Particles
+  for (let i=0;i<count;i++) {
+    const p = document.createElement('div');
+    p.className = 'spell-particle';
+    const ang = (Math.PI*2*i/count)+Math.random()*0.5;
+    const dist = 40+Math.random()*80;
+    const sz = 4+Math.random()*8;
+    p.style.cssText = `
+      width:${sz}px;height:${sz}px;
+      left:${cx}px;top:${cy}px;
+      background:${def.color};
+      box-shadow:0 0 ${sz*2}px ${def.color};
+      transform-origin:center;
+    `;
+    overlay.appendChild(p);
+    const tx = Math.cos(ang)*dist, ty = Math.sin(ang)*dist;
+    p.animate([
+      {opacity:1, transform:`translate(0,0) scale(1)`},
+      {opacity:0, transform:`translate(${tx}px,${ty}px) scale(0)`}
+    ], {duration:600+Math.random()*400, easing:'ease-out', fill:'forwards'})
+      .onfinish = ()=>p.remove();
+  }
+}
+
+function floatDamage(player, text, color) {
+  const feed = document.getElementById('feed');
+  const rect = feed.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'dmg-float';
+  el.style.cssText = `color:${color};left:${rect.left+50+Math.random()*100}px;top:${rect.top+100+Math.random()*80}px;text-shadow:0 0 10px ${color};`;
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1300);
+}
+
+// ─── DAG VISUALIZATION ───
+
+let dagLayout = [];
+
+function layoutDAG() {
+  // Simple layered layout
+  const nodes = [...dagNodes.values()];
+  if (!nodes.length) return;
+
+  // BFS from genesis
+  const visited = new Set();
+  const layers = [];
+  const queue = [];
+
+  // Find roots (no prev)
+  nodes.filter(n=>n.prev.length===0).forEach(n=>{ queue.push({node:n,layer:0}); });
+  if (!queue.length && nodes.length) queue.push({node:nodes[0],layer:0});
+
+  while (queue.length) {
+    const {node, layer} = queue.shift();
+    if (visited.has(node.id)) continue;
+    visited.add(node.id);
+    if (!layers[layer]) layers[layer] = [];
+    layers[layer].push(node);
+    // Children = nodes that reference this id
+    nodes.filter(n=>n.prev.includes(node.id) && !visited.has(n.id))
+      .forEach(c=>queue.push({node:c,layer:layer+1}));
+  }
+
+  dagLayout = layers;
+}
+
+function drawDAG() {
+  const canvas = document.getElementById('dagCanvas');
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (!dagLayout.length) return;
+
+  const W = canvas.width, H = canvas.height;
+  const maxLayers = dagLayout.length;
+  const xStep = W / (maxLayers + 1);
+  const nodeR = 6;
+
+  // Assign positions
+  const positions = new Map();
+  dagLayout.forEach((layer, li) => {
+    const x = xStep * (li + 1);
+    layer.forEach((node, ni) => {
+      const yStep = H / (layer.length + 1);
+      const y = yStep * (ni + 1);
+      positions.set(node.id, {x, y});
+    });
+  });
+
+  // Draw edges
+  dagLayout.flat().forEach(node => {
+    const to = positions.get(node.id);
+    if (!to) return;
+    node.prev.forEach(prevId => {
+      const from = positions.get(prevId);
+      if (!from) return;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.bezierCurveTo(from.x+(to.x-from.x)*0.5, from.y, from.x+(to.x-from.x)*0.5, to.y, to.x, to.y);
+      ctx.strokeStyle = 'rgba(120,140,200,0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+  });
+
+  // Draw nodes
+  dagLayout.flat().forEach(node => {
+    const pos = positions.get(node.id);
+    if (!pos) return;
+    const color = node.prev.length===0 ? '#d4a843'
+      : node.type==='spell' ? (SPELL_DEFS[node.payload?.spell]?.color || 'var(--fire)').replace('var(--fire)','#ff4d1c').replace('var(--heal)','#22d98a').replace('var(--shield)','#4db8ff').replace('var(--lightning)','#ffe066').replace('var(--curse)','#c44dff')
+      : node.prev.length>1 ? '#7c6aff'
+      : '#6a7490';
+
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, nodeR, 0, Math.PI*2);
+    ctx.fillStyle = color + '33';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Glow for recent
+    const age = Date.now() - node.ts;
+    if (age < 3000) {
+      const alpha = 1 - age/3000;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, nodeR+4*alpha, 0, Math.PI*2);
+      ctx.strokeStyle = color + Math.floor(alpha*150).toString(16).padStart(2,'0');
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  });
+}
+
+// Redraw DAG periodically for glow animation
+setInterval(drawDAG, 100);
+
+// ─── DEMO MODE ───
+
+const DEMO_CHAT_MSGS = [
+  "The ancient wards stir…",
+  "Watch your back, mage.",
+  "By the old pacts, I call forth power!",
+  "Is that all you have?",
+  "The DAG converges. No escape.",
+  "Interesting defensive posture.",
+  "Your spells are predictable.",
+];
+
+function tickDemo() {
+  const pids = [...players.keys()];
+  const authorId = pids[Math.floor(Math.random()*pids.length)];
+
+  if (Math.random() < 0.35) {
+    // Chat
+    const msg = DEMO_CHAT_MSGS[Math.floor(Math.random()*DEMO_CHAT_MSGS.length)];
+    const ev = { id: randomHex(5), prev:[...dagHeads], author:authorId, ts:Date.now(), type:'chat', payload:{text:msg}, demo:true, sig: randomHex(8) };
+    addEventToDAG(ev);
+    addChatToFeed(msg, authorId, true);
+
+    // Occasional DAG merge line
+    if (Math.random()<0.3) {
+      setTimeout(()=>addSystemMessage(`⬡ DAG merge · ${randomHex(3)} converged`), 200);
+    }
+  } else {
+    // Spell
+    const spells = Object.keys(SPELL_DEFS);
+    const spell = spells[Math.floor(Math.random()*spells.length)];
+    const targetId = pids.filter(p=>p!==authorId)[Math.floor(Math.random()*(pids.length-1))];
+    const ev = { id:randomHex(5), prev:[...dagHeads], author:authorId, ts:Date.now(), type:'spell', payload:{spell,target:targetId}, demo:true, sig:randomHex(8) };
+    addEventToDAG(ev);
+    applyEvent(ev);
+    addSpellToFeed(ev, true);
+    renderPlayers();
+    if (Math.random()<0.4) triggerSpellEffect(spell, ev);
+  }
+}
+
+// ─── INIT ───
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function init() {
+  initPlayers();
+  renderPlayers();
+  renderSpellButtons();
+
+  // Genesis event
+  const genesis = {
+    id: randomHex(5), prev:[], author:'system', ts:Date.now(),
+    type:'genesis', payload:{room:'arcane-delta-7'}, demo:false, sig:'0000',
+  };
+  addEventToDAG(genesis);
+  addSystemMessage('⬡ Genesis block · Room arcane-delta-7 initialized');
+  addSystemMessage('⬡ ' + players.size + ' peers connected via WebRTC mesh');
+
+  // Target select sync
+  document.getElementById('targetSelect').addEventListener('change', e => {
+    selectedTarget = e.target.value;
+    renderPlayers();
+  });
+
+  // Send chat
+  function sendChat() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const ev = createEvent('chat', {text});
+    addChatToFeed(text, selfId, false);
+    input.value = '';
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', sendChat);
+  document.getElementById('chatInput').addEventListener('keydown', e => {
+    if (e.key==='Enter') sendChat();
+  });
+
+  // Demo toggle
+  document.getElementById('demoToggle').addEventListener('click', () => {
+    demoActive = !demoActive;
+    document.getElementById('demoToggle').classList.toggle('active', demoActive);
+    if (demoActive) {
+      addSystemMessage('⬡ Demo mode activated · Seeded sequence running');
+      demoInterval = setInterval(tickDemo, 1800);
+    } else {
+      clearInterval(demoInterval);
+      addSystemMessage('⬡ Demo mode deactivated');
+    }
+  });
+
+  // DAG toggle
+  document.getElementById('dagToggleBtn').addEventListener('click', () => {
+    dagVisible = !dagVisible;
+    document.getElementById('dagPanel').classList.toggle('hidden', !dagVisible);
+    setTimeout(drawDAG, 300);
+  });
+
+  // Resize DAG
+  window.addEventListener('resize', () => { setTimeout(drawDAG, 50); });
+
+  // Initial DAG draw
+  setTimeout(drawDAG, 100);
+
+  // Start demo automatically after 1s
+  setTimeout(() => {
+    document.getElementById('demoToggle').click();
+  }, 1000);
+}
+
+init();
+</script>
+</body>
+</html>
